@@ -14,3 +14,4 @@ Every push to `main` triggers a GitHub Actions build. To download the latest bui
 ## Manual trigger
 
 You can also trigger a build without pushing new code: go to **Actions** → **Build Windows Executable** → **Run workflow**.
+# sorter-1
