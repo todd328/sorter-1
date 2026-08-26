@@ -10,6 +10,7 @@ import logging
 import socket
 import sys
 import threading
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -134,7 +135,8 @@ class SorterSession:
             log.error("Cannot connect to sure sort PC - check the sure sort PC: %s", err)
             return
 
-        threading.Thread(target=self.receive_loop, daemon=True).start()
+        receive_thread = threading.Thread(target=self.receive_loop, daemon=False)
+        receive_thread.start()
         log.info("Receive thread started.")
 
         self.send({
@@ -228,8 +230,11 @@ def main() -> None:
     print("Programmed by Preston Todd Cash")
     print("")
 
-    session = SorterSession(HOST_IP, PORT)
-    session.connect()
+    while True:
+        session = SorterSession(HOST_IP, PORT)
+        session.connect()
+        log.info("Session ended - retrying in 5 seconds...")
+        time.sleep(5)
 
 
 if __name__ == "__main__":
