@@ -131,8 +131,7 @@ class SorterSession:
         try:
             self.sock.connect((self.host, self.port))
             log.info("Connected to InductELC at %s:%s", self.host, self.port)
-        except OSError as err:
-            log.error("Cannot connect to sure sort PC - check the sure sort PC: %s", err)
+        except OSError:
             return
 
         receive_thread = threading.Thread(target=self.receive_loop, daemon=False)
