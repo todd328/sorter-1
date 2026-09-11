@@ -7,10 +7,10 @@ Programmed by Preston Todd Cash
 
 import json
 import logging
+import os
 import socket
 import sys
 import threading
-import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -19,10 +19,10 @@ from datetime import datetime, timezone
 # Configuration
 # ---------------------------------------------------------------------------
 VERSION = "2.0"
-HOST_IP = "172.17.2.142"
-PORT = 24200
+HOST_IP = os.environ.get("SURESORT_HOST", "172.17.2.142")
+PORT = int(os.environ.get("SURESORT_PORT", "24200"))
 
-BASE_API_URL = "http://atlprod:1023/suresort1"
+BASE_API_URL = os.environ.get("SURESORT_API_URL", "http://atlprod:1023/suresort1")
 BIN_LOOKUP_ENDPOINT = f"{BASE_API_URL}/sortc250/"
 
 # barcode length -> (endpoint, human-readable label)
@@ -134,8 +134,7 @@ class SorterSession:
         except OSError:
             return
 
-        receive_thread = threading.Thread(target=self.receive_loop, daemon=False)
-        receive_thread.start()
+        threading.Thread(target=self.receive_loop, daemon=True).start()
         log.info("Receive thread started.")
 
         self.send({
@@ -217,6 +216,8 @@ class SorterSession:
 def decode_json(raw: bytes) -> dict | None:
     try:
         text = raw.decode("utf8").replace("'", '"').split("\n\x03")[0]
+        if text.startswith("\x02"):
+            text = text[1:]
         return json.loads(text)
     except (UnicodeDecodeError, json.JSONDecodeError):
         log.exception("Error decoding JSON data")
@@ -229,11 +230,14 @@ def main() -> None:
     print("Programmed by Preston Todd Cash")
     print("")
 
-    while True:
-        session = SorterSession(HOST_IP, PORT)
-        session.connect()
-        log.info("Session ended - retrying in 5 seconds...")
-        time.sleep(5)
+    session = SorterSession(HOST_IP, PORT)
+    session.connect()
+
+    try:
+        while True:
+            threading.Event().wait()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
